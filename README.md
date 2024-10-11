@@ -2,4 +2,4 @@
 
 ---
 
-    `work in progress`
+    surreal start --log trace --user root --pass root rocksdb:mydatabase.db
