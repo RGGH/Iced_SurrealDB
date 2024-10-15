@@ -3,7 +3,7 @@ use iced::alignment::Horizontal;
 use iced::alignment::Vertical;
 use iced::widget;
 use iced::widget::Container;
-use iced::widget::{text, Text, Theme};
+use iced::widget::Theme;
 use iced::window;
 use iced::window::Position;
 use iced::Length;
@@ -30,7 +30,7 @@ enum Message {
     DecrementCount,
     // Emitted when Fetch ("Fetch") button is pressed
     FetchRecords,
-    //
+    // Data from Fetch response
     DBdata(String),
 }
 
@@ -45,31 +45,34 @@ impl Counter {
         }
     }
 
-
     fn update(&mut self, message: Message) -> iced::Task<Message> {
-    match message {
-        Message::IncrementCount => self.count += 1,
-        Message::DecrementCount => self.count -= 1,
-        Message::FetchRecords => {
-            // Task::perform requires two arguments:
-            // 1. The future (an async operation)
-            // 2. A function to map the result into a message
-            return Task::perform(async {
-                dodb() // The async operation
-            }, |result| {
-                match result {
-                    Ok(data) => Message::DBdata(data),
-                    Err(_) => Message::DBdata("Error fetching data".to_string()), // Handle error case
-                }
-            });
-        },
-        Message::DBdata(data) => {
-            // Process the data here, for example:
-            self.dbdata =data;
-        },
+        match message {
+            Message::IncrementCount => self.count += 1,
+            Message::DecrementCount => self.count -= 1,
+            Message::FetchRecords => {
+                // Task::perform requires two arguments:
+                // 1. The future (an async operation)
+                // 2. A function to map the result into a message
+                return Task::perform(
+                    async {
+                        dodb() // The async operation
+                    },
+                    |result| {
+                        match result {
+                            Ok(data) => Message::DBdata(data),
+                            Err(_) => Message::DBdata("Error fetching data".to_string()), // Handle error case
+                        }
+                    },
+                );
+            }
+            Message::DBdata(data) => {
+                // Process the data here, for example:
+                self.dbdata = data;
+                println!("{:?}", self.dbdata);
+            }
+        }
+        iced::Task::none()
     }
-    iced::Task::none()
-}
 
     fn view(&self) -> iced::Element<'_, Message> {
         let column = widget::column![
@@ -80,7 +83,7 @@ impl Counter {
             widget::text(self.dbdata.clone()),
         ]
         .spacing(10)
-        .padding(20)
+        .padding(25)
         .align_x(Horizontal::Center);
 
         let stuff_centered: Container<'_, Message, Theme, Renderer> =

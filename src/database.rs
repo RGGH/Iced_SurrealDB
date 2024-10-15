@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
-use serde_json;
 use surrealdb::engine::remote::ws::Ws;
 use surrealdb::opt::auth::Root;
-use surrealdb::opt::Resource;
-use surrealdb::RecordId;
-use surrealdb::Surreal;
-use surrealdb::Value;
+use surrealdb::{Error, RecordId, Surreal};
 
 #[derive(Debug, Serialize)]
 pub struct Name<'a> {
@@ -30,16 +26,25 @@ pub struct Record {
     id: RecordId,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct Marketing {
+    pub count : i32,
+    pub marketing : bool,
+}
+
 #[tokio::main]
-pub async fn dodb() -> surrealdb::Result<String> {
+pub async fn dodb() -> Result<String, Error> {
+    // Connect to the database
     let db = Surreal::new::<Ws>("127.0.0.1:8000").await?;
 
+    // Sign in as root user
     db.signin(Root {
         username: "root",
         password: "root",
     })
     .await?;
 
+    // Select the namespace and database
     db.use_ns("test").use_db("test").await?;
 
     // Create a new person with a random id
@@ -54,35 +59,21 @@ pub async fn dodb() -> surrealdb::Result<String> {
             marketing: true,
         })
         .await?;
-    //dbg!(created);
-
-    // Update a person record with a specific id
-    // We don't care about the response in this case
-    // so we are just going to use `Resource::from`
-    // to let the compiler return `surrealdb::Value`
-    db.update(Resource::from(("person", "jaime")))
-        .merge(Responsibility { marketing: true })
-        .await?;
-
-    // Select all people records
-    let people: Vec<Record> = db.select("person").await?;
-    //dbg!(people);
+    dbg!(created);
 
     // Perform a custom advanced query
-    let mut groups = db
+    let mut entries = db
         .query("SELECT marketing, count() FROM type::table($table) GROUP BY marketing")
         .bind(("table", "person"))
         .await?;
-    // Use .take() to transform the first query result into
-    // anything that can be deserialized, in this case
-    // a Value
-    // dbg!(groups.take::<Value>(0).unwrap());
 
-    // Use .take() to deserialize the first query result as a Value
-    let res_value = groups.take::<Value>(0).unwrap();
+    dbg!(&entries);
+    let entries: Vec<Marketing> = entries.take(0)?;
+    for entry in &entries {
+        println!("Count {:?} Marketing {:?}", entry.count, entry.marketing);
+    }
 
-    // Convert Value to JSON using serde_json
-    let res_json = serde_json::to_string(&res_value).unwrap();
-
-    Ok(res_json)
+    let result_string = entries[0].count.to_string();
+    Ok(result_string) // Return the result string
 }
+
