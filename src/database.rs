@@ -14,6 +14,7 @@ pub struct Person<'a> {
     pub title: &'a str,
     pub name: Name<'a>,
     pub marketing: bool,
+    pub company : String,
 }
 
 #[derive(Debug, Serialize)]
@@ -30,6 +31,7 @@ pub struct Record {
 pub struct Marketing {
     pub count : i32,
     pub marketing : bool,
+    pub company : String,
 }
 
 #[tokio::main]
@@ -57,23 +59,24 @@ pub async fn dodb() -> Result<String, Error> {
                 last: "The Menace",
             },
             marketing: true,
+            company : "jml".to_string(),
         })
         .await?;
     dbg!(created);
 
     // Perform a custom advanced query
     let mut entries = db
-        .query("SELECT marketing, count() FROM type::table($table) GROUP BY marketing")
+        .query("SELECT marketing, company, count() FROM type::table($table) GROUP BY marketing")
         .bind(("table", "person"))
         .await?;
 
     dbg!(&entries);
     let entries: Vec<Marketing> = entries.take(0)?;
     for entry in &entries {
-        println!("Count {:?} Marketing {:?}", entry.count, entry.marketing);
+        println!("Count {:?} Marketing? {:?} Company {:?}", entry.count, entry.marketing, entry.company);
     }
 
-    let result_string = entries[0].count.to_string();
+    let result_string = entries[0].company.to_string();
     Ok(result_string) // Return the result string
 }
 
