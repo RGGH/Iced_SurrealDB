@@ -1,4 +1,5 @@
 use database::dodb;
+use iced::widget::image::Handle;
 use iced::alignment::Horizontal;
 use iced::alignment::Vertical;
 use iced::widget;
@@ -10,19 +11,18 @@ use iced::Length;
 use iced::Renderer;
 use iced::Size;
 use iced::Task;
-use iced::widget::text_input;
 use iced::widget::image;
 
-fn theme(_: &Counter) -> Theme {
+fn theme(_: &App) -> Theme {
     Theme::CatppuccinMacchiato
 }
 
 mod database;
 
-struct Counter {
+struct App {
     count: i32,
     dbdata: String,
-    content: String,
+    search_for: String,
 }
 
 #[derive(Debug, Clone)]
@@ -39,15 +39,15 @@ enum Message {
     ContentChanged(String),
 }
 
-// Implement our Counter
-impl Counter {
+// Implement our App
+impl App {
     fn new() -> Self {
-        // initialize the counter struct
+        // initialize the app struct
         // with count value as 0.
         Self {
             count: 0,
             dbdata: "".to_string(),
-            content : "".to_string(),
+            search_for : "".to_string(),
         }
     }
 
@@ -76,16 +76,21 @@ impl Counter {
                 self.dbdata = data;
                 println!("{:?}", self.dbdata);
             }
-            Message::ContentChanged(counter)=>{
-                self.content = counter;
+            Message::ContentChanged(app)=>{
+                self.search_for = app;
             }
         }
         iced::Task::none()
     }
 
     fn view(&self) -> iced::Element<'_, Message> {
+        let image: iced::widget::Image<Handle> = image("resources/banner.jpg")
+            .width(Length::Fill)
+            .height(Length::Fill);
+
         let column = widget::column![
-            widget::text_input("Type something here...", &self.content)
+            image,
+            widget::text_input("Type something here...", &self.search_for)
         .on_input(Message::ContentChanged),
             widget::button("-").on_press(Message::DecrementCount),
             widget::text(self.count.to_string()),
@@ -109,14 +114,13 @@ impl Counter {
 }
 
 fn main() -> Result<(), iced::Error> {
-    // let _ = dodb();
-    // run the app from main function
-    iced::application("Learning Rust", Counter::update, Counter::view)
+
+    iced::application("Learning Rust", App::update, App::view)
         .window(window::Settings {
             position: Position::Centered,
-            size: Size::new(600.0, 400.0),
+            size: Size::new(800.0, 600.0),
             ..Default::default()
         })
         .theme(theme)
-        .run_with(|| (Counter::new(), iced::Task::none()))
+        .run_with(|| (App::new(), iced::Task::none()))
 }
