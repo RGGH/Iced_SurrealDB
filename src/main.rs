@@ -10,6 +10,8 @@ use iced::Length;
 use iced::Renderer;
 use iced::Size;
 use iced::Task;
+use iced::widget::text_input;
+use iced::widget::image;
 
 fn theme(_: &Counter) -> Theme {
     Theme::CatppuccinMacchiato
@@ -20,6 +22,7 @@ mod database;
 struct Counter {
     count: i32,
     dbdata: String,
+    content: String,
 }
 
 #[derive(Debug, Clone)]
@@ -32,6 +35,8 @@ enum Message {
     FetchRecords,
     // Data from Fetch response
     DBdata(String),
+    //
+    ContentChanged(String),
 }
 
 // Implement our Counter
@@ -42,6 +47,7 @@ impl Counter {
         Self {
             count: 0,
             dbdata: "".to_string(),
+            content : "".to_string(),
         }
     }
 
@@ -70,12 +76,17 @@ impl Counter {
                 self.dbdata = data;
                 println!("{:?}", self.dbdata);
             }
+            Message::ContentChanged(counter)=>{
+                self.content = counter;
+            }
         }
         iced::Task::none()
     }
 
     fn view(&self) -> iced::Element<'_, Message> {
         let column = widget::column![
+            widget::text_input("Type something here...", &self.content)
+        .on_input(Message::ContentChanged),
             widget::button("-").on_press(Message::DecrementCount),
             widget::text(self.count.to_string()),
             widget::button("+").on_press(Message::IncrementCount),
@@ -100,7 +111,7 @@ impl Counter {
 fn main() -> Result<(), iced::Error> {
     // let _ = dodb();
     // run the app from main function
-    iced::application("Counter Example", Counter::update, Counter::view)
+    iced::application("Learning Rust", Counter::update, Counter::view)
         .window(window::Settings {
             position: Position::Centered,
             size: Size::new(600.0, 400.0),
